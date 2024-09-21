@@ -1,30 +1,50 @@
 @echo off
-echo Deleting unnecessary shortcuts...
+
+REM Delete Epic Games Launcher shortcut
 del /f "C:\Users\Public\Desktop\Epic Games Launcher.lnk" > out.txt 2>&1
-echo Configuring system properties...
-net config server /srvcomment:"Windows Server 2019 By mohammadali" > out.txt 2>&1
-echo Setting system registry...
-REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F > out.txt 2>&1
-REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /f /v Wallpaper /t REG_SZ /d D:\a\wallpaper.bat > out.txt 2>&1
-echo Adding user...
+
+REM Set server description
+net config server /srvcomment:"Windows Server 2019 By mohammadali" >> out.txt 2>&1
+
+REM Disable auto-hide for the system tray
+REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" /V EnableAutoTray /T REG_DWORD /D 0 /F >> out.txt 2>&1
+
+REM Set the wallpaper script to run at startup
+REG ADD "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /f /v Wallpaper /t REG_SZ /d D:\a\wallpaper.bat
+
+REM Add a new user and add to administrators group
 net user mohammadali mmd@123 /add >nul
 net localgroup administrators mohammadali /add >nul
 net user mohammadali /active:yes >nul
-echo Removing installer user...
-net user installer /delete
-echo Configuring performance and services...
+
+REM Delete a user named installer
+net user installer /delete >nul
+
+REM Enable and start the performance counters and the audio service
 diskperf -Y >nul
 sc config Audiosrv start= auto >nul
 sc start Audiosrv >nul
-echo Setting permissions...
+
+REM Grant full access to specified directories for the new user
 ICACLS C:\Windows\Temp /grant mohammadali:F >nul
 ICACLS C:\Windows\installer /grant mohammadali:F >nul
-echo Checking NGROK status and retrieving IP...
-tasklist | find /i "ngrok.exe" >Nul && curl -s http://localhost:4040/api/tunnels | jq -r .tunnels[0].public_url > ip.txt || echo "Failed to retrieve NGROK authtoken - check again your authtoken"
-echo IP Address:
-type ip.txt
+
+REM Display installation success message
+echo Successfully installed! If RDP is dead, rebuild again.
+
+REM Retrieve and display the Ngrok IP address
+tasklist | find /i "ngrok.exe" >Nul
+if %errorlevel% == 0 (
+    for /f "tokens=*" %%i in ('curl -s localhost:4040/api/tunnels ^| jq -r .tunnels[0].public_url') do set IP=%%i
+    echo IP: %IP%
+) else (
+    echo Failed to retrieve NGROK authtoken - check again your authtoken
+)
+
+REM Display login credentials
 echo Username: mohammadali
 echo Password: mmd@123
 echo You can login now
-echo Waiting for all services to start...
+
+REM Wait for 10 seconds to complete all operations
 ping -n 10 127.0.0.1 >nul
