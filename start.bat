@@ -37,8 +37,6 @@ tasklist | find /i "ngrok.exe" >Nul
 if %errorlevel% == 0 (
     for /f "tokens=*" %%i in ('curl -s localhost:4040/api/tunnels ^| jq -r .tunnels[0].public_url') do set IP=%%i
     echo IP: %IP%
-) else (
-    echo Failed to retrieve NGROK authtoken - check again your authtoken
 )
 
 REM Display login credentials
